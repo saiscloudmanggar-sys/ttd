@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport"content="width=device-width, initial-scale=1, maximum-scale=10">
+
+<title>TTD PDF V2 Tahap 1</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+
+<style>
+
+body{font-family:Arial;background:#f5f5f5;
+text-align:center;margin:10px;
+}
+
+.section{
+background:white;
+
+padding:12px;
+margin:10px auto;
+
+width:95%;
+max-width:1000px;
+
+border-radius:10px;
+box-shadow:0 2px 8px rgba(0,0,0,.15);
+
+box-sizing:border-box;
+}
+
+#signatureCanvas{
+border:2px dashed #999;
+background:white;
+
+width:100%;
+max-width:700px;
+height:250px;
+
+box-sizing:border-box;
+touch-action:none;
+
+}
+
+#pdfWrapper{
+position:relative;
+display:block;
+
+width:100%;
+max-width:1000px;
+
+margin:auto;
+
+background:white;
+box-shadow:0 2px 10px rgba(0,0,0,.2);
+
+overflow:auto;
+
+touch-action:pinch-zoom;
+}
+
+#pdfCanvas{
+display:block;
+
+width:100%;
+height:auto;
+}
+
+#overlayCanvas{
+position:absolute;
+left:0;
+top:0;
+
+width:100%;
+height:100%;
+
+}
+
+button{
+padding:10px 15px;
+margin:4px;
+cursor:pointer;
+}
+
+
+
+
+.saveBtn{
+background:#2e7d32;
+color:white;
+font-weight:bold;
+}
+
+</style>
+</head>
+<body>
+
+<div class="section">
+
+<h2>Area Tanda Tangan</h2>
+
+<select id="inkColor">
+  <option value="#000000">Hitam</option>
+  <option value="#0d47a1">Biru Tua1</option>
+  <option value="#0E0E6B" selected>Biru Tua2</option>
+</select>
+
+<select id="penStyle">
+  <option value="ballpoint">Pulpen</option>
+  <option value="fountain" selected>Tinta</option>
+</select>
+
+<br><br>
+
+<canvas id="signatureCanvas"
+width="500"
+height="250"></canvas>
+
+<br>
+
+<button onclick="undoSignature()">Undo</button>
+<button onclick="clearSignature()">Clear</button>
+<button onclick="createStamp()">Buat PNG TTD</button>
+<button onclick="resetApp()" style="background:#d32f2f;color:white;font-weight:bold;">Reset Aplikasi</button>
+
+</div>
+
+<div class="section">
+
+<h2>PDF</h2>
+
+<input type="file" id="pdfUpload" accept="application/pdf">
+
+<br><br>
+
+<button onclick="undoStamp()">Undo Tempel</button>
+
+<button onclick="clearStamp()">Clear Tempelan</button>
+
+<button class="saveBtn" onclick="savePDF()">
+Simpan PDF
+</button>
+
+<br><br>
+
+<button onclick="prevPage()">Prev</button>
+
+<span id="pageInfo">
+Page 1
+</span>
+
+<button onclick="nextPage()">Next</button>
+
+<br><br>
+
+<div id="pdfWrapper">
+
+<canvas id="pdfCanvas"></canvas>
+<canvas id="overlayCanvas"></canvas>
+
+</div>
+
+</div>
+
+<div class="section">
+
+<h2>Verifikasi Penandatangan</h2>
+
+<button onclick="verifyHash()">
+Verifikasi Penandatangan
+</button>
+
+<br><br>
+
+<div id="hashResult"style="word-break:break-all;font-weight:bold;">-
+
+</div>
+
+</div>
+
+
+
+
+<script>
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+let pdfBytes;
+let pdfDoc;
+let pdfLibDoc;
+
+let currentPage=1;
+let totalPages=1;
+
+let scale=1.5;
+
+let signaturePNG=null;
+
+let signatures={};
+
+const pdfCanvas=document.getElementById("pdfCanvas");
+const overlayCanvas=document.getElementById("overlayCanvas");
+const pdfCtx=pdfCanvas.getContext("2d");
+const overlayCtx=overlayCanvas.getContext("2d");
+const signerName = "xxxx"; //    NAMA USER
+const signerAgency = "yyyy"; //NAMA INSTANSI
+const NoPeg = "zzzz"; //Nomor Pegawai
+
+let dragging=false;
+let selectedIndex=-1;
+let resizing=false;
+const HANDLE_SIZE=10;
+let dragOffsetX=0;
+let dragOffsetY=0;
+let lastPoint = null;
+let stampRatio = 1;
+let activePointers = new Map();
+let originalFileName = "";
+let signerUserID = "";
+
+
+// RESET APLIKASI
+function resetApp(){
+
+if(confirm("Reset aplikasi dan hapus semua data yang belum disimpan?")){
+
+location.reload();
+
+}
+
+}
+
+
+
+
+//
+// SIGNATURE PAD
+//
+
+const sigCanvas=document.getElementById("signatureCanvas");
+
+function resizeSignatureCanvas(){
+
+const width =
+Math.min(
+700,
+window.innerWidth*0.9
+);
+
+sigCanvas.width = width;
+sigCanvas.height = 250;
+
+}
+resizeSignatureCanvas();
+
+const sigCtx=sigCanvas.getContext("2d");
+
+let drawing=false;
+let sigHistory=[];
+
+sigCtx.lineWidth=3;
+sigCtx.lineCap="round";
+sigCtx.strokeStyle="#1a237e";
+
+function getPos(canvas,e){
+
+const rect=canvas.getBoundingClientRect();
+
+return{
+x:(e.clientX-rect.left)*(canvas.width/rect.width),
+y:(e.clientY-rect.top)*(canvas.height/rect.height)
+};
+
+}
+
+function getOverlayPos(e){
+
+const rect =
+overlayCanvas.getBoundingClientRect();
+
+const scaleX =
+overlayCanvas.width / rect.width;
+
+const scaleY =
+overlayCanvas.height / rect.height;
+
+return{
+x:(e.clientX-rect.left)*scaleX,
+y:(e.clientY-rect.top)*scaleY
+};
+
+}
+
+sigCanvas.addEventListener("pointerdown",e=>{
+
+activePointers.set(
+e.pointerId,
+{
+x:e.clientX,
+y:e.clientY
+}
+);
+
+drawing=true;
+
+const p=getPos(sigCanvas,e);
+
+lastPoint=p;
+
+sigCtx.beginPath();
+sigCtx.moveTo(p.x,p.y);
+
+sigHistory.push(
+sigCanvas.toDataURL()
+);
+
+});
+
+sigCanvas.addEventListener("pointermove",e=>{
+
+activePointers.set(
+e.pointerId,
+{
+x:e.clientX,
+y:e.clientY
+}
+);
+
+if(activePointers.size>=2){
+
+dragging=false;
+resizing=false;
+
+return;
+}
+
+if(!drawing) return;
+
+const p = getPos(sigCanvas,e);
+
+const color =
+document.getElementById("inkColor").value;
+
+const style =
+document.getElementById("penStyle").value;
+
+sigCtx.strokeStyle = color;
+
+let width = 2;
+
+if(lastPoint){
+
+const dx = p.x-lastPoint.x;
+const dy = p.y-lastPoint.y;
+
+const speed =
+Math.sqrt(dx*dx+dy*dy);
+
+if(style==="ballpoint"){
+
+width =
+Math.max(
+1.2,
+Math.min(
+2.5,
+4-(speed*0.08)
+)
+);
+
+}else{
+
+width =
+Math.max(
+2,
+Math.min(
+6,
+8-(speed*0.15)
+)
+);
+
+}
+
+}
+
+sigCtx.lineWidth = width;
+
+sigCtx.lineTo(p.x,p.y);
+sigCtx.stroke();
+
+lastPoint = p;
+
+});
+
+sigCanvas.addEventListener("pointerup",e=>{
+
+activePointers.delete(
+e.pointerId
+);
+
+drawing=false;
+lastPoint=null;
+
+});
+
+function clearSignature(){
+
+sigCtx.clearRect(
+0,0,
+sigCanvas.width,
+sigCanvas.height
+);
+
+sigHistory=[];
+
+}
+
+function undoSignature(){
+
+if(sigHistory.length===0) return;
+
+const img=new Image();
+
+img.onload=()=>{
+
+sigCtx.clearRect(
+0,0,
+sigCanvas.width,
+sigCanvas.height
+);
+
+sigCtx.drawImage(img,0,0);
+
+};
+
+img.src=sigHistory.pop();
+
+}
+
+function createStamp(){
+
+const imgData =
+sigCtx.getImageData(
+0,
+0,
+sigCanvas.width,
+sigCanvas.height
+);
+
+const data = imgData.data;
+
+let minX = sigCanvas.width;
+let minY = sigCanvas.height;
+let maxX = 0;
+let maxY = 0;
+
+for(let y=0;y<sigCanvas.height;y++){
+
+for(let x=0;x<sigCanvas.width;x++){
+
+const index =
+(y*sigCanvas.width+x)*4;
+
+const alpha =
+data[index+3];
+
+if(alpha>0){
+
+if(x<minX) minX=x;
+if(y<minY) minY=y;
+
+if(x>maxX) maxX=x;
+if(y>maxY) maxY=y;
+
+}
+
+}
+
+}
+
+if(maxX===0 && maxY===0){
+
+alert("Tanda tangan masih kosong");
+return;
+
+}
+
+const padding = 8;
+
+minX=Math.max(0,minX-padding);
+minY=Math.max(0,minY-padding);
+
+maxX=Math.min(
+sigCanvas.width,
+maxX+padding
+);
+
+maxY=Math.min(
+sigCanvas.height,
+maxY+padding
+);
+
+const cropWidth =
+maxX-minX;
+
+const cropHeight =
+maxY-minY;
+
+stampRatio = cropWidth / cropHeight;
+
+const cropCanvas =
+document.createElement("canvas");
+
+cropCanvas.width =
+cropWidth;
+
+cropCanvas.height =
+cropHeight;
+
+const cropCtx =
+cropCanvas.getContext("2d");
+
+cropCtx.drawImage(
+sigCanvas,
+minX,
+minY,
+cropWidth,
+cropHeight,
+0,
+0,
+cropWidth,
+cropHeight
+);
+
+signaturePNG =
+cropCanvas.toDataURL(
+"image/png"
+);
+
+alert(
+"PNG tanda tangan siap ditempel."
+);
+
+}
+
+//
+// PDF LOAD
+//
+
+document.getElementById("pdfUpload")
+.addEventListener("change",async e=>{
+
+const file=e.target.files[0];
+
+originalFileName = file.name;
+
+// Reset semua tempelan lama
+signatures = {};
+selectedIndex = -1;
+dragging = false;
+resizing = false;
+
+overlayCtx.clearRect(
+0,0,
+overlayCanvas.width,
+overlayCanvas.height
+);
+
+
+pdfBytes=await file.arrayBuffer();
+
+pdfDoc=
+await pdfjsLib
+.getDocument({data:pdfBytes})
+.promise;
+
+totalPages=pdfDoc.numPages;
+
+pdfLibDoc=
+await PDFLib.PDFDocument.load(pdfBytes);
+
+currentPage=1;
+
+renderPage(currentPage);
+
+});
+
+async function renderPage(pageNum){
+
+const page=
+await pdfDoc.getPage(pageNum);
+
+const viewport=
+page.getViewport({scale});
+
+pdfCanvas.width=viewport.width;
+pdfCanvas.height=viewport.height;
+
+overlayCanvas.width=viewport.width;
+overlayCanvas.height=viewport.height;
+
+await page.render({
+canvasContext:pdfCtx,
+viewport
+}).promise;
+
+drawStamps();
+
+document.getElementById("pageInfo")
+.innerText=
+`Page ${pageNum}/${totalPages}`;
+
+}
+
+//
+// PAGE NAV
+//
+
+function prevPage(){
+
+if(currentPage>1){
+
+currentPage--;
+renderPage(currentPage);
+
+}
+
+}
+
+function nextPage(){
+
+if(currentPage<totalPages){
+
+currentPage++;
+renderPage(currentPage);
+
+}
+
+}
+
+//
+// STAMP
+//
+
+function ensurePage(){
+
+if(!signatures[currentPage]){
+
+signatures[currentPage]=[];
+
+}
+
+}
+
+overlayCanvas.addEventListener(
+"dblclick",
+e=>{
+
+if(!signaturePNG) return;
+
+ensurePage();
+
+const pos =
+getOverlayPos(e);
+
+const w = 140;
+const h = w / stampRatio;
+
+const newStamp = {
+
+x:pos.x-(w/2),
+y:pos.y-(h/2),
+
+width:w,
+height:h
+
+};
+
+signatures[currentPage].push(newStamp);
+
+// otomatis pilih tempelan terbaru
+selectedIndex =
+signatures[currentPage].length - 1;
+
+drawStamps();
+
+});
+
+function drawStamps(){
+
+overlayCtx.clearRect(
+0,0,
+overlayCanvas.width,
+overlayCanvas.height
+);
+
+if(!signaturePNG) return;
+
+if(!signatures[currentPage]) return;
+
+const img=new Image();
+
+img.onload=()=>{
+
+signatures[currentPage]
+.forEach((sig,i)=>{
+
+overlayCtx.drawImage(
+img,
+sig.x,
+sig.y,
+sig.width,
+sig.height
+);
+
+if(i===selectedIndex){
+
+overlayCtx.fillStyle="#1976d2";
+
+overlayCtx.fillRect(
+sig.x+sig.width-10,
+sig.y+sig.height-10,
+10,
+10
+);
+
+}
+
+});
+
+};
+
+img.src=signaturePNG;
+
+}
+
+//
+// DRAG
+//
+
+overlayCanvas.addEventListener(
+"pointerdown",
+e=>{
+
+if(!signatures[currentPage]) return;
+
+const pos =
+getOverlayPos(e);
+
+const mx = pos.x;
+const my = pos.y;
+
+for(
+let i=signatures[currentPage].length-1;
+i>=0;
+i--
+){
+
+const s=
+signatures[currentPage][i];
+
+const handleX =
+s.x+s.width-HANDLE_SIZE;
+
+const handleY =
+s.y+s.height-HANDLE_SIZE;
+
+if(
+mx>=handleX &&
+mx<=handleX+HANDLE_SIZE &&
+my>=handleY &&
+my<=handleY+HANDLE_SIZE
+){
+
+selectedIndex=i;
+resizing=true;
+
+overlayCanvas.setPointerCapture(
+e.pointerId
+);
+
+break;
+
+}
+
+if(
+mx>=s.x &&
+mx<=s.x+s.width &&
+my>=s.y &&
+my<=s.y+s.height
+){
+
+selectedIndex=i;
+dragging=true;
+
+dragOffsetX=mx-s.x;
+dragOffsetY=my-s.y;
+
+overlayCanvas.setPointerCapture(
+e.pointerId
+);
+
+break;
+
+}
+
+}
+
+});
+
+overlayCanvas.addEventListener(
+"pointermove",
+e=>{
+
+// ===== RESIZE =====
+if(resizing){
+
+const pos =
+getOverlayPos(e);
+
+const mx = pos.x;
+const my = pos.y;
+
+const sig=
+signatures[currentPage][selectedIndex];
+
+sig.width =
+Math.max(
+40,
+mx-sig.x
+);
+
+sig.height =
+sig.width / stampRatio;
+
+drawStamps();
+
+return;
+
+}
+
+// ===== DRAG =====
+if(!dragging) return;
+
+const pos =
+getOverlayPos(e);
+
+const mx = pos.x;
+const my = pos.y;
+
+const sig=
+signatures[currentPage][selectedIndex];
+
+sig.x=mx-dragOffsetX;
+sig.y=my-dragOffsetY;
+
+drawStamps();
+
+});
+
+window.addEventListener(
+"pointerup",
+e=>{
+
+dragging=false;
+resizing=false;
+
+try{
+
+overlayCanvas.releasePointerCapture(
+e.pointerId
+);
+
+}catch(err){}
+
+});
+
+//
+// UNDO
+//
+
+function undoStamp(){
+
+if(!signatures[currentPage]) return;
+
+signatures[currentPage].pop();
+
+drawStamps();
+
+}
+
+function clearStamp(){
+
+signatures[currentPage]=[];
+
+drawStamps();
+
+}
+
+//
+// HASH
+//
+async function generateHash(text){
+
+const encoder =
+new TextEncoder();
+
+const data =
+encoder.encode(text);
+
+const hashBuffer =
+await crypto.subtle.digest(
+"SHA-256",
+data
+);
+
+const hashArray =
+Array.from(
+new Uint8Array(hashBuffer)
+);
+
+return hashArray
+.map(b=>b.toString(16).padStart(2,"0"))
+.join("")
+.toUpperCase();
+
+}
+
+//
+// Generate USER ID
+//
+
+async function generateUserID(){
+
+const rawHash =
+await generateHash(
+signerName +
+signerAgency + 
+NoPeg
+);
+
+return rawHash
+.substring(0,12);
+
+}
+
+
+//
+// SAVE PDF
+//
+async function savePDF(){
+
+try{
+
+if(!pdfLibDoc){
+ alert("Silakan buka file PDF terlebih dahulu");
+ return;
+}
+
+if(!signaturePNG){
+ alert("Silakan buat PNG tanda tangan terlebih dahulu");
+ return;
+}
+
+if(!pdfLibDoc) return;
+
+const pages = pdfLibDoc.getPages();
+
+for(let p=1; p<=totalPages; p++){
+
+if(!signatures[p]) continue;
+
+const page = pages[p-1];
+
+const png =
+await pdfLibDoc.embedPng(
+signaturePNG
+);
+
+const size =
+page.getSize();
+
+const pageView =
+await pdfDoc.getPage(p);
+
+const viewport =
+pageView.getViewport({scale});
+
+const ratioX =
+size.width / viewport.width;
+
+const ratioY =
+size.height / viewport.height;
+
+for(const sig of signatures[p]){
+
+const signDate =
+new Date().toLocaleString(
+"id-ID",
+{
+dateStyle:"medium",
+timeStyle:"long"
+}
+);
+
+signerUserID =
+await generateUserID();
+
+
+page.drawImage(
+png,
+{
+x:sig.x*ratioX,
+y:size.height-
+((sig.y+sig.height)*ratioY),
+
+width:sig.width*ratioX,
+height:sig.height*ratioY
+}
+);
+
+const lineX =
+(sig.x*ratioX) +
+(sig.width*ratioX) +
+15;
+
+const infoX =
+lineX + 8;
+
+const infoY =
+size.height -
+(sig.y*ratioY) -
+10;
+
+//GARIS VERTIKAL
+page.drawLine({
+start:{
+x:lineX,
+y:infoY+8
+},
+end:{
+x:lineX,
+y:infoY-44
+},
+thickness:1
+});
+
+const lineGap = 7.5;
+const titleGap = 11;
+
+page.drawText(
+"Digitally Signed",
+{
+x:infoX,
+y:infoY,
+size:10
+}
+);
+
+page.drawText(
+`User ID : ${signerUserID}`,
+{
+x:infoX,
+y:infoY-titleGap,
+size:7
+}
+);
+
+page.drawText(
+`Nama : ${signerName}`,
+{
+x:infoX,
+y:infoY-titleGap-lineGap,
+size:7
+}
+);
+
+page.drawText(
+`Instansi : ${signerAgency}`,
+{
+x:infoX,
+y:infoY-titleGap-(lineGap*2),
+size:7
+}
+);
+
+page.drawText(
+`No. Pegawai : ${NoPeg}`,
+{
+x:infoX,
+y:infoY-titleGap-(lineGap*3),
+size:7
+}
+);
+
+page.drawText(
+`Tanggal : ${signDate}`,
+{
+x:infoX,
+y:infoY-titleGap-(lineGap*4),
+size:7
+}
+);
+
+}
+
+}
+
+
+// TAMBAH METADATA PDF
+pdfLibDoc.setAuthor(
+signerName
+);
+
+pdfLibDoc.setSubject(
+signerAgency
+);
+
+pdfLibDoc.setKeywords([
+NoPeg
+]);
+
+pdfLibDoc.setTitle(
+originalFileName
+);
+
+pdfLibDoc.setProducer(
+"TTD PDF V3.0"
+);
+
+pdfLibDoc.setCreator(
+signerUserID
+);
+
+
+const bytes =
+await pdfLibDoc.save();
+
+const blob =
+new Blob(
+[bytes],
+{type:"application/pdf"}
+);
+
+const link =
+document.createElement("a");
+
+link.href =
+URL.createObjectURL(blob);
+
+let outputName =
+"PDF_TTD.pdf";
+
+if(originalFileName){
+
+const dotIndex =
+originalFileName.lastIndexOf(".");
+
+if(dotIndex > -1){
+
+outputName =
+originalFileName.substring(
+0,
+dotIndex
+)
++
+"_ttd.pdf";
+
+}else{
+
+outputName =
+originalFileName +
+"_ttd.pdf";
+
+}
+
+}
+
+link.download =
+outputName;
+
+link.click();
+
+}
+
+catch(err){
+
+console.error(err);
+
+alert(
+"Gagal menyimpan PDF : " +
+err.message
+);
+
+}
+
+}
+
+//
+// VERIFY HASH
+//
+async function verifyHash(){
+
+try{
+
+if(!pdfLibDoc){
+
+alert(
+"Silakan buka file PDF terlebih dahulu"
+);
+return;
+}
+
+const signerNameMeta =
+pdfLibDoc.getAuthor() || "";
+
+const signerAgencyMeta =
+pdfLibDoc.getSubject() || "";
+
+const noPegMeta =
+pdfLibDoc.getKeywords() || "";
+
+const signerUserIDMeta =
+pdfLibDoc.getCreator() || "";
+
+
+if(
+!signerUserIDMeta
+)
+
+{
+
+alert(
+"Document belum ditandatangani"
+);
+
+document.getElementById(
+"hashResult"
+).innerHTML =
+"Document belum ditandatangani";
+
+return;
+
+}
+
+console.log(
+"Keywords:",
+pdfLibDoc.getKeywords()
+);
+
+const expectedUserID =
+(
+await generateHash(
+signerNameMeta +
+signerAgencyMeta + 
+noPegMeta
+)
+).substring(0,12);
+
+const status =
+expectedUserID === signerUserIDMeta
+?
+"✓ VALID"
+:
+"✗ DATA BERUBAH";
+
+document.getElementById(
+"hashResult"
+).innerHTML =
+`
+<b>${status}</b>
+<br><br>
+Nama : ${signerNameMeta}
+<br>
+Instansi : ${signerAgencyMeta}
+<br>
+NoPeg.  : ${noPegMeta}
+<br>
+User ID : ${signerUserIDMeta}
+`;
+
+}catch(err){
+
+console.error(err);
+
+alert(
+"Gagal membaca data penandatangan"
+);
+
+
+console.log(
+pdfLibDoc.getKeywords()
+);
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
