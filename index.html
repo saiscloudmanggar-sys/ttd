@@ -1025,7 +1025,12 @@ return rawHash
 async function savePDF(){
 
 try{
+if(!signerName){
 
+alert("Silakan login terlebih dahulu");
+return;
+}
+  
 if(!pdfLibDoc){
  alert("Silakan buka file PDF terlebih dahulu");
  return;
