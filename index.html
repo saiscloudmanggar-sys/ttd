@@ -213,9 +213,9 @@ const pdfCanvas=document.getElementById("pdfCanvas");
 const overlayCanvas=document.getElementById("overlayCanvas");
 const pdfCtx=pdfCanvas.getContext("2d");
 const overlayCtx=overlayCanvas.getContext("2d");
-const signerName = ""; //    NAMA USER
-const signerAgency = ""; //NAMA INSTANSI
-const NoPeg = ""; //Nomor Pegawai
+let signerName = ""; //    NAMA USER
+let signerAgency = ""; //NAMA INSTANSI
+let NoPeg = ""; //Nomor Pegawai
 
 let dragging=false;
 let selectedIndex=-1;
@@ -598,50 +598,62 @@ renderPage(currentPage);
 //
 // LOGIN PIN
 //
-  
+
 async function loginPIN(){
 
 const pin =
 document.getElementById("pinInput").value;
 
 const url =
-"URL_APPS_SCRIPT_ANDA?pin=" +
+"https://script.google.com/macros/s/AKfycbxD0r0L32WFnbP8zTtJfGwj60h-PjRqSZeo281XDFkP5e4VumC2KmCK0a6NKZnoj-9l/exec?pin=" +
 encodeURIComponent(pin);
 
 try{
 
-```
 const response =
-  await fetch(url);
+await fetch(url);
 
 const data =
-  await response.json();
+await response.json();
 
 if(data.success){
+if(data.aktif !== "Y"){
 
-  signerName = data.nama;
-  signerAgency = data.instansi;
-  NoPeg = data.nopeg;
+alert("User tidak aktif");
+return;
 
-  alert(
-    "Login berhasil\n\n" +
-    signerName
-  );
+}
+signerName = data.nama;
+signerAgency = data.instansi;
+NoPeg = String(data.nopeg);
+
+document.getElementById(
+"loginStatus"
+).innerHTML =
+"✅ Login : " +
+signerName +
+" (" +
+data.jabatan +
+")";
+
+alert(
+"Login berhasil\n\n" +
+signerName
+);
 
 }else{
 
-  alert("PIN salah");
+alert("PIN salah");
 
 }
-```
 
 }catch(err){
 
-```
 alert(
-  "Gagal menghubungi server"
+"Gagal menghubungi server"
 );
-```
+
+console.error(err);
 
 }
 
