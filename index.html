@@ -113,6 +113,11 @@ font-weight:bold;
   <option value="#000000">Hitam</option>
   <option value="#0d47a1">Biru Tua1</option>
   <option value="#0E0E6B" selected>Biru Tua2</option>
+  <option value="#D4AF37">Emas</option>
+  <option value="#C9A227">Emas2</option>
+  <option value="#B8860B">Emas3</option>
+  <option value="#FFFFFF">Putih</option>
+  <option value="#F5F5F5">Putih Abu</option>
 </select>
 
 <select id="penStyle">
@@ -216,7 +221,7 @@ const overlayCtx=overlayCanvas.getContext("2d");
 let signerName = ""; //    NAMA USER
 let signerAgency = ""; //NAMA INSTANSI
 let NoPeg = ""; //Nomor Pegawai
-
+let signerJabatan = ""; //JABATAN User
 let dragging=false;
 let selectedIndex=-1;
 let resizing=false;
@@ -621,20 +626,21 @@ if(data.aktif !== "Y"){
 
 alert("User tidak aktif");
 return;
-
 }
+  
 signerName = data.nama;
 signerAgency = data.instansi;
+signerJabatan = data.jabatan;
 NoPeg = String(data.nopeg);
 
 document.getElementById(
 "loginStatus"
 ).innerHTML =
-"✅ Login : " +
-signerName +
-" (" +
-data.jabatan +
-")";
+  "✅ Login : " +
+  signerName +
+  " (" +
+  signerJabatan +
+  ")";
 
 alert(
 "Login berhasil\n\n" +
@@ -1119,7 +1125,7 @@ y:infoY+8
 },
 end:{
 x:lineX,
-y:infoY-44
+y:infoY-58
 },
 thickness:1
 });
@@ -1164,10 +1170,20 @@ size:7
 );
 
 page.drawText(
-`No. Pegawai : ${NoPeg}`,
+`Jabatan : ${signerJabatan}`,
 {
 x:infoX,
 y:infoY-titleGap-(lineGap*3),
+size:7
+}
+);
+  
+
+page.drawText(
+`No. Pegawai : ${NoPeg}`,
+{
+x:infoX,
+y:infoY-titleGap-(lineGap*4),
 size:7
 }
 );
@@ -1176,7 +1192,7 @@ page.drawText(
 `Tanggal : ${signDate}`,
 {
 x:infoX,
-y:infoY-titleGap-(lineGap*4),
+y:infoY-titleGap-(lineGap*5),
 size:7
 }
 );
@@ -1192,7 +1208,7 @@ signerName
 );
 
 pdfLibDoc.setSubject(
-signerAgency
+signerAgency + "|" + signerJabatan
 );
 
 pdfLibDoc.setKeywords([
@@ -1204,7 +1220,7 @@ originalFileName
 );
 
 pdfLibDoc.setProducer(
-"TTD PDF V3.0"
+"TTD PDF V3.2"
 );
 
 pdfLibDoc.setCreator(
