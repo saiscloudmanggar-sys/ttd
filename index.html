@@ -95,7 +95,16 @@ font-weight:bold;
 </style>
 </head>
 <body>
+<div class="section" id="loginSection">
+<h2>Login Penandatangan</h2>
 
+<input type="password" id="pinInput" placeholder="Masukkan PIN">
+
+<button onclick="loginPIN()">Masuk</button>
+
+<div id="loginStatus"></div>
+</div>
+  
 <div class="section">
 
 <h2>Area Tanda Tangan</h2>
@@ -204,9 +213,9 @@ const pdfCanvas=document.getElementById("pdfCanvas");
 const overlayCanvas=document.getElementById("overlayCanvas");
 const pdfCtx=pdfCanvas.getContext("2d");
 const overlayCtx=overlayCanvas.getContext("2d");
-const signerName = "xxxx"; //    NAMA USER
-const signerAgency = "yyyy"; //NAMA INSTANSI
-const NoPeg = "zzzz"; //Nomor Pegawai
+const signerName = ""; //    NAMA USER
+const signerAgency = ""; //NAMA INSTANSI
+const NoPeg = ""; //Nomor Pegawai
 
 let dragging=false;
 let selectedIndex=-1;
@@ -585,6 +594,58 @@ currentPage=1;
 renderPage(currentPage);
 
 });
+
+//
+// LOGIN PIN
+//
+  
+async function loginPIN(){
+
+const pin =
+document.getElementById("pinInput").value;
+
+const url =
+"URL_APPS_SCRIPT_ANDA?pin=" +
+encodeURIComponent(pin);
+
+try{
+
+```
+const response =
+  await fetch(url);
+
+const data =
+  await response.json();
+
+if(data.success){
+
+  signerName = data.nama;
+  signerAgency = data.instansi;
+  NoPeg = data.nopeg;
+
+  alert(
+    "Login berhasil\n\n" +
+    signerName
+  );
+
+}else{
+
+  alert("PIN salah");
+
+}
+```
+
+}catch(err){
+
+```
+alert(
+  "Gagal menghubungi server"
+);
+```
+
+}
+
+}
 
 async function renderPage(pageNum){
 
