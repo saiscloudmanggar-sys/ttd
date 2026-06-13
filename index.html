@@ -636,14 +636,8 @@ signerAgency = data.instansi;
 signerJabatan = data.jabatan;
 NoPeg = String(data.nopeg);
 
-document.getElementById(
-"loginStatus"
-).innerHTML =
-  "✅ Login : " +
-  signerName +
-  " (" +
-  signerJabatan +
-  ")";
+document.getElementById("loginStatus").innerHTML =
+  "✅ Login : " +  signerName +  " (" +  signerJabatan +  ")";
 
 alert(
 "Login berhasil\n\n" +
