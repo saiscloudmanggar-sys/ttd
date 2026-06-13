@@ -1118,14 +1118,16 @@ height:sig.height*ratioY
 }
 );
 
+// SET POSISI HORIZONTAL Digitally signed & Garis Vertical
+const sigWidth = sig.width * ratioX;
+
 const lineX =
-(sig.x*ratioX) +
-(sig.width*ratioX) +
-15;
+(sig.x * ratioX) + sigWidth + (sigWidth * 0.03);
 
 const infoX =
-lineX + 8;
+lineX + (sigWidth * 0.02);
 
+  // POSISI VERTIKAL
 const sigTop =
 size.height - (sig.y * ratioY);
 
@@ -1135,8 +1137,8 @@ size.height - ((sig.y + sig.height) * ratioY);
 const sigCenterY =
 (sigTop + sigBottom) / 2;
 
-const infoY = sigCenterY + 12;
-
+  // posisi title di sekitar tengah TTD
+const infoY = sigCenterY + 8;
 const lineGap = 5;
 const titleGap = 9;
 const textColor = hexToRgb(selectedInkColor);
