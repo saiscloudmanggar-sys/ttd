@@ -233,6 +233,7 @@ let stampRatio = 1;
 let activePointers = new Map();
 let originalFileName = "";
 let signerUserID = "";
+let selectedInkColor = "#0E0E6B";
 
 
 // RESET APLIKASI
@@ -547,6 +548,8 @@ cropWidth,
 cropHeight
 );
 
+selectedInkColor = document.getElementById("inkColor").value;
+  
 signaturePNG =
 cropCanvas.toDataURL(
 "image/png"
@@ -1023,7 +1026,25 @@ return rawHash
 .substring(0,12);
 
 }
+  
+//
+// fungsi konversi HEX ke RGB
+//
 
+function hexToRgb(hex){
+
+hex = hex.replace("#","");
+
+const bigint =
+parseInt(hex,16);
+
+return {
+r: ((bigint >> 16) & 255)/255,
+g: ((bigint >> 8) & 255)/255,
+b: (bigint & 255)/255
+};
+
+}
 
 //
 // SAVE PDF
@@ -1128,17 +1149,20 @@ x:lineX,
 y:infoY-58
 },
 thickness:1
+color:textColor
 });
 
 const lineGap = 7.5;
 const titleGap = 11;
-
+const textColor = hexToRgb(selectedInkColor);
+  
 page.drawText(
 "Digitally Signed",
 {
 x:infoX,
 y:infoY,
 size:10
+color:textColor
 }
 );
 
@@ -1148,6 +1172,7 @@ page.drawText(
 x:infoX,
 y:infoY-titleGap,
 size:7
+color:textColor
 }
 );
 
@@ -1157,6 +1182,7 @@ page.drawText(
 x:infoX,
 y:infoY-titleGap-lineGap,
 size:7
+color:textColor
 }
 );
 
@@ -1166,6 +1192,7 @@ page.drawText(
 x:infoX,
 y:infoY-titleGap-(lineGap*2),
 size:7
+color:textColor
 }
 );
 
@@ -1175,6 +1202,7 @@ page.drawText(
 x:infoX,
 y:infoY-titleGap-(lineGap*3),
 size:7
+color:textColor
 }
 );
   
@@ -1194,6 +1222,7 @@ page.drawText(
 x:infoX,
 y:infoY-titleGap-(lineGap*5),
 size:7
+color:textColor
 }
 );
 
