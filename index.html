@@ -1125,7 +1125,7 @@ const lineX =
 (sig.x * ratioX) + sigWidth + (sigWidth * 0.03);
 
 const infoX =
-lineX + (sigWidth * 0.02);
+lineX + Math.max(8, sigWidth * 0.04);
 
   // POSISI VERTIKAL
 const sigTop =
@@ -1147,11 +1147,11 @@ const textColor = hexToRgb(selectedInkColor);
 page.drawLine({
 start:{
 x:lineX,
-y:sigTop
+y:infoY + 4
 },
 end:{
 x:lineX,
-y:sigBottom
+y:infoY - (titleGap + (lineGap * 4) + 4)
 },
 thickness:1,
 color:textColor
