@@ -1132,6 +1132,10 @@ size.height -
 (sig.y*ratioY) -
 10;
 
+const lineGap = 7.5;
+const titleGap = 11;
+const textColor = hexToRgb(selectedInkColor);
+  
 //GARIS VERTIKAL
 page.drawLine({
 start:{
@@ -1145,12 +1149,6 @@ y:infoY-58
 thickness:1,
 color:textColor
 });
-
-
-
-const lineGap = 7.5;
-const titleGap = 11;
-const textColor = hexToRgb(selectedInkColor);
   
 page.drawText(
 "Digitally Signed",
