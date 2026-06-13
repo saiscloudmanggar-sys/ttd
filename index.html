@@ -221,7 +221,7 @@ const overlayCtx=overlayCanvas.getContext("2d");
 let signerName = ""; //    NAMA USER
 let signerAgency = ""; //NAMA INSTANSI
 let NoPeg = ""; //Nomor Pegawai
-let signerJabatan = ""; //JABATAN User
+//let signerJabatan = ""; //JABATAN User
 let dragging=false;
 let selectedIndex=-1;
 let resizing=false;
@@ -633,11 +633,11 @@ return;
   
 signerName = data.nama;
 signerAgency = data.instansi;
-signerJabatan = data.jabatan;
+//signerJabatan = data.jabatan;
 NoPeg = String(data.nopeg);
 
 document.getElementById("loginStatus").innerHTML =
-  "✅ Login : " +  signerName +  " (" +  signerJabatan +  ")";
+  "✅ Login : " +  signerName +  " (" +  signerAgency +  ")";
 
 alert(
 "Login berhasil\n\n" +
@@ -1126,35 +1126,42 @@ const lineX =
 const infoX =
 lineX + 8;
 
-const infoY =
-size.height -
-(sig.y*ratioY) -
-10;
+const sigTop =
+size.height - (sig.y * ratioY);
 
-const lineGap = 7.5;
-const titleGap = 11;
+const sigBottom =
+size.height - ((sig.y + sig.height) * ratioY);
+
+const sigCenterY =
+(sigTop + sigBottom) / 2;
+
+const infoY = sigCenterY + 12;
+
+const lineGap = 5;
+const titleGap = 9;
 const textColor = hexToRgb(selectedInkColor);
   
 //GARIS VERTIKAL
 page.drawLine({
 start:{
 x:lineX,
-y:infoY+8
+y:sigTop
 },
 end:{
 x:lineX,
-y:infoY-58
+y:sigBottom
 },
 thickness:1,
 color:textColor
 });
-  
+
+//DIGITALLY SIGNED
 page.drawText(
 "Digitally Signed",
 {
 x:infoX,
 y:infoY,
-size:10,
+size:8,
 color:textColor
 }
 );
@@ -1164,7 +1171,7 @@ page.drawText(
 {
 x:infoX,
 y:infoY-titleGap,
-size:7,
+size:6,
 color:textColor
 }
 );
@@ -1174,7 +1181,7 @@ page.drawText(
 {
 x:infoX,
 y:infoY-titleGap-lineGap,
-size:7,
+size:6,
 color:textColor
 }
 );
@@ -1184,28 +1191,28 @@ page.drawText(
 {
 x:infoX,
 y:infoY-titleGap-(lineGap*2),
-size:7,
+size:6,
 color:textColor
 }
 );
 
-page.drawText(
-`Jabatan : ${signerJabatan}`,
-{
-x:infoX,
-y:infoY-titleGap-(lineGap*3),
-size:7,
-color:textColor
-}
-);
+//page.drawText(
+//`Jabatan : ${signerJabatan}`,
+//{
+//x:infoX,
+//y:infoY-titleGap-(lineGap*3),
+//size:6,
+//color:textColor
+//}
+//);
   
 
 page.drawText(
 `No. Pegawai : ${NoPeg}`,
 {
 x:infoX,
-y:infoY-titleGap-(lineGap*4),
-size:7,
+y:infoY-titleGap-(lineGap*3),
+size:6,
 color:textColor
 }
 );
@@ -1214,8 +1221,8 @@ page.drawText(
 `Tanggal : ${signDate}`,
 {
 x:infoX,
-y:infoY-titleGap-(lineGap*5),
-size:7,
+y:infoY-titleGap-(lineGap*4),
+size:6,
 color:textColor
 }
 );
@@ -1231,7 +1238,7 @@ signerName
 );
 
 pdfLibDoc.setSubject(
-signerAgency + "|" + signerJabatan
+signerAgency + "|" + signerAgency
 );
 
 pdfLibDoc.setKeywords([
