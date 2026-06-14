@@ -1,4 +1,4 @@
-# TTD PDF V3.3
+# TTD PDF V3.31
 
 Aplikasi berbasis HTML untuk menambahkan tanda tangan digital ke dokumen PDF secara offline melalui browser tanpa instalasi software tambahan.
 
@@ -96,4 +96,7 @@ Disarankan menggunakan:
 
 ## Versi
 
-TTD PDF V3.3
+TTD PDF V3.31
+
+## Bug removal
+Load PDF bisa berkali dari file yang sama
