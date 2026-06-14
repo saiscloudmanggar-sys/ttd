@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport"content="width=device-width, initial-scale=1, maximum-scale=10">
 
-<title>TTD PDF V2 Tahap 1</title>
+<title>TTD PDF V3.3</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
@@ -1137,21 +1137,32 @@ size.height - ((sig.y + sig.height) * ratioY);
 const sigCenterY =
 (sigTop + sigBottom) / 2;
 
-  // posisi title di sekitar tengah TTD
-const infoY = sigCenterY + 18;
 const lineGap = 5;
 const titleGap = 9;
-const textColor = hexToRgb(selectedInkColor);
+
+// tinggi seluruh blok tulisan
+const blockHeight =
+titleGap + (lineGap * 4);
+
+// posisi blok tulisan di tengah TTD
+const infoY =
+sigCenterY + (blockHeight / 2) - 0;
+
+const textColor =
+hexToRgb(selectedInkColor);
   
 //GARIS VERTIKAL
+const blockTop = infoY + 6;
+const blockBottom = infoY - (titleGap + (lineGap * 4) + 1);
+
 page.drawLine({
 start:{
 x:lineX,
-y:infoY + 4
+y:blockTop
 },
 end:{
 x:lineX,
-y:infoY - (titleGap + (lineGap * 4) + 6)
+y:blockBottom
 },
 thickness:1,
 color:textColor
@@ -1252,7 +1263,7 @@ originalFileName
 );
 
 pdfLibDoc.setProducer(
-"TTD PDF V3.2"
+"TTD PDF V3.3"
 );
 
 pdfLibDoc.setCreator(
