@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport"content="width=device-width, initial-scale=1, maximum-scale=10">
 
-<title>TTD PDF V3.3</title>
+<title>TTD PDF V3.31</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
@@ -566,14 +566,21 @@ alert(
 //
 
 document.getElementById("pdfUpload")
-.addEventListener("change",async e=>{
+.addEventListener("change", async e => {
 
-const file=e.target.files[0];
+const file = e.target.files[0];
+if(!file) return;
 
-originalFileName = file.name;
+// ===== RESET SEMUA DATA PDF SEBELUMNYA =====
+pdfBytes = null;
+pdfDoc = null;
+pdfLibDoc = null;
 
-// Reset semua tempelan lama
 signatures = {};
+
+currentPage = 1;
+totalPages = 1;
+
 selectedIndex = -1;
 dragging = false;
 resizing = false;
@@ -584,22 +591,28 @@ overlayCanvas.width,
 overlayCanvas.height
 );
 
+pdfCtx.clearRect(
+0,0,
+pdfCanvas.width,
+pdfCanvas.height
+);
 
-pdfBytes=await file.arrayBuffer();
+// ===== LOAD PDF BARU =====
+originalFileName = file.name;
 
-pdfDoc=
+pdfBytes = await file.arrayBuffer();
+
+pdfDoc =
 await pdfjsLib
-.getDocument({data:pdfBytes})
+.getDocument({data: pdfBytes})
 .promise;
 
-totalPages=pdfDoc.numPages;
+totalPages = pdfDoc.numPages;
 
-pdfLibDoc=
+pdfLibDoc =
 await PDFLib.PDFDocument.load(pdfBytes);
 
-currentPage=1;
-
-renderPage(currentPage);
+renderPage(1);
 
 });
 
@@ -1045,6 +1058,8 @@ return PDFLib.rgb(
 async function savePDF(){
 
 try{
+
+
 if(!signerName){
 
 alert("Silakan login terlebih dahulu");
@@ -1061,9 +1076,15 @@ if(!signaturePNG){
  return;
 }
 
-if(!pdfLibDoc) return;
+// selalu load ulang dari file asli
+const pdfToSave =
+await PDFLib.PDFDocument.load(pdfBytes);
 
-const pages = pdfLibDoc.getPages();
+const pages =
+pdfToSave.getPages();
+//
+
+if(!pdfLibDoc) return;
 
 for(let p=1; p<=totalPages; p++){
 
@@ -1072,7 +1093,7 @@ if(!signatures[p]) continue;
 const page = pages[p-1];
 
 const png =
-await pdfLibDoc.embedPng(
+await pdfToSave.embedPng(
 signaturePNG
 );
 
@@ -1170,7 +1191,7 @@ color:textColor
 
 //DIGITALLY SIGNED
 page.drawText(
-"Digitally Signed",
+"Ditandatangani Secara Digital",
 {
 x:infoX,
 y:infoY,
@@ -1180,7 +1201,7 @@ color:textColor
 );
 
 page.drawText(
-`User ID : ${signerUserID}`,
+`${signerName}`,
 {
 x:infoX,
 y:infoY-titleGap,
@@ -1190,7 +1211,7 @@ color:textColor
 );
 
 page.drawText(
-`Nama : ${signerName}`,
+`${signerAgency}`,
 {
 x:infoX,
 y:infoY-titleGap-lineGap,
@@ -1200,7 +1221,7 @@ color:textColor
 );
 
 page.drawText(
-`Instansi : ${signerAgency}`,
+`ID: ${signerUserID}`,
 {
 x:infoX,
 y:infoY-titleGap-(lineGap*2),
@@ -1221,7 +1242,7 @@ color:textColor
   
 
 page.drawText(
-`No. Pegawai : ${NoPeg}`,
+`No.Pegawai: ${NoPeg}`,
 {
 x:infoX,
 y:infoY-titleGap-(lineGap*3),
@@ -1246,33 +1267,33 @@ color:textColor
 
 
 // TAMBAH METADATA PDF
-pdfLibDoc.setAuthor(
+pdfToSave.setAuthor(
 signerName
 );
 
-pdfLibDoc.setSubject(
+pdfToSave.setSubject(
 signerAgency
 );
 
-pdfLibDoc.setKeywords([
+pdfToSave.setKeywords([
 NoPeg
 ]);
 
-pdfLibDoc.setTitle(
+pdfToSave.setTitle(
 originalFileName
 );
 
-pdfLibDoc.setProducer(
-"TTD PDF V3.3"
+pdfToSave.setProducer(
+"TTD PDF V3.31"
 );
 
-pdfLibDoc.setCreator(
+pdfToSave.setCreator(
 signerUserID
 );
 
 
 const bytes =
-await pdfLibDoc.save();
+await pdfToSave.save();
 
 const blob =
 new Blob(
