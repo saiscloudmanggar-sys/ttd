@@ -1,4 +1,4 @@
-# TTD PDF V3.2
+# TTD PDF V3.3
 
 Aplikasi berbasis HTML untuk menambahkan tanda tangan digital ke dokumen PDF secara offline melalui browser tanpa instalasi software tambahan.
 
@@ -13,7 +13,7 @@ Aplikasi berbasis HTML untuk menambahkan tanda tangan digital ke dokumen PDF sec
   * Emas Tua
   * Putih
   * Putih Abu
-  * 
+    
 * Pilihan gaya pena:
   * Pulpen
   * Tinta
@@ -68,7 +68,6 @@ Setiap dokumen yang ditandatangani akan menyimpan informasi:
 * User ID
 * Nama
 * Instansi
-* Jabatan
 * Nomor Pegawai
 * Tanggal dan waktu penandatanganan
 
@@ -97,4 +96,4 @@ Disarankan menggunakan:
 
 ## Versi
 
-TTD PDF V3.2
+TTD PDF V3.3
