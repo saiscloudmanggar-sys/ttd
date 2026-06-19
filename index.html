@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport"content="width=device-width, initial-scale=1, maximum-scale=10">
 
-<title>TTD PDF V3.31</title>
+<title>TTD PDF V3.32</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
@@ -136,6 +136,7 @@ height="250"></canvas>
 <button onclick="undoSignature()">Undo</button>
 <button onclick="clearSignature()">Clear</button>
 <button onclick="createStamp()">Buat PNG TTD</button>
+<button onclick="showReadme()"style="background:#1976d2;color:white;font-weight:bold;">📖 Baca Saya</button>
 <button onclick="resetApp()" style="background:#d32f2f;color:white;font-weight:bold;">Reset Aplikasi</button>
 
 </div>
@@ -193,6 +194,56 @@ Verifikasi Penandatangan
 
 </div>
 
+<div id="readmeModal"
+style="
+display:none;
+position:fixed;
+left:0;
+top:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.5);
+z-index:9999;
+">
+
+<div
+style="
+background:white;
+width:90%;
+max-width:700px;
+margin:40px auto;
+padding:20px;
+border-radius:10px;
+text-align:left;
+max-height:80vh;
+overflow:auto;
+">
+
+<h2>Panduan Penggunaan</h2>
+
+<ol>
+<li>Masukkan PIN Penandatangan lalu klik Masuk.</li>
+<li>Buat tanda tangan pada Area Tanda Tangan.</li>
+<li>Klik Buat PNG TTD.</li>
+<li>Upload file PDF.</li>
+<li>Double klik pada PDF untuk menempelkan tanda tangan.</li>
+<li>Geser atau ubah ukuran tanda tangan sesuai kebutuhan.</li>
+<li>Klik Simpan PDF.</li>
+</ol>
+
+<p>
+<b>Catatan:</b><br>
+• Undo Tempel menghapus tempelan terakhir.<br>
+• Clear Tempelan menghapus semua tempelan pada halaman aktif.<br>
+• Reset Aplikasi menghapus seluruh data sementara yang belum disimpan.
+</p>
+
+<div style="text-align:center;margin-top:15px;">
+<button onclick="closeReadme()">Tutup</button>
+</div>
+
+</div>
+</div>
 
 
 
@@ -247,7 +298,14 @@ location.reload();
 
 }
 
+// README
+function showReadme(){
+document.getElementById("readmeModal").style.display="block";
+}
 
+function closeReadme(){
+document.getElementById("readmeModal").style.display="none";
+}
 
 
 //
@@ -1284,7 +1342,7 @@ originalFileName
 );
 
 pdfToSave.setProducer(
-"TTD PDF V3.31"
+"TTD PDF V3.32"
 );
 
 pdfToSave.setCreator(
