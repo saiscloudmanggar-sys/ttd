@@ -149,6 +149,11 @@ height="250"></canvas>
 
 <br><br>
 
+<button onclick="enablePasteMode()"
+style="background:#1976d2;color:white;font-weight:bold;">
+📌 Tempel TTD
+</button>
+
 <button onclick="undoStamp()">Undo Tempel</button>
 
 <button onclick="clearStamp()">Clear Tempelan</button>
@@ -285,6 +290,7 @@ let activePointers = new Map();
 let originalFileName = "";
 let signerUserID = "";
 let selectedInkColor = "#0E0E6B";
+let pasteMode = false;
 
 
 // RESET APLIKASI
@@ -800,39 +806,80 @@ signatures[currentPage]=[];
 
 }
 
-overlayCanvas.addEventListener(
-"dblclick",
-e=>{
+function enablePasteMode(){
 
-if(!signaturePNG) return;
+if(!signaturePNG){
+
+alert("Silakan klik Buat PNG TTD terlebih dahulu");
+return;
+
+}
+
+pasteMode = true;
+
+alert(
+"Mode Tempel Aktif.\n\n" +
+"Silakan sentuh lokasi pada PDF untuk menempelkan tanda tangan."
+);
+
+}	
+
+
+function addStamp(pos){
 
 ensurePage();
-
-const pos =
-getOverlayPos(e);
 
 const w = 140;
 const h = w / stampRatio;
 
 const newStamp = {
 
-x:pos.x-(w/2),
-y:pos.y-(h/2),
+x: pos.x - (w/2),
+y: pos.y - (h/2),
 
-width:w,
-height:h
+width: w,
+height: h
 
 };
 
 signatures[currentPage].push(newStamp);
 
-// otomatis pilih tempelan terbaru
 selectedIndex =
 signatures[currentPage].length - 1;
 
 drawStamps();
 
+}
+
+
+overlayCanvas.addEventListener(
+"dblclick",
+e=>{
+
+if(!signaturePNG) return;
+
+addStamp(
+getOverlayPos(e)
+);
+
 });
+
+overlayCanvas.addEventListener(
+"click",
+e=>{
+
+if(!pasteMode) return;
+
+if(!signaturePNG) return;
+
+addStamp(
+getOverlayPos(e)
+);
+
+pasteMode = false;
+
+});
+
 
 function drawStamps(){
 
