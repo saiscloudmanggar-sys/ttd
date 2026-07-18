@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport"content="width=device-width, initial-scale=1, maximum-scale=10">
 
-<title>TTD PDF V3.32</title>
+<title>TTD PDF V3.33</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
@@ -98,11 +98,25 @@ font-weight:bold;
 <div class="section" id="loginSection">
 <h2>Login Penandatangan</h2>
 
-<input type="password" id="pinInput" placeholder="Masukkan PIN">
+<input
+type="email"
+id="emailInput"
+placeholder="Masukkan Email"
+style="width:260px;padding:8px;">
+<br><br>
+
+<input
+type="password"
+id="pinInput"
+placeholder="Masukkan PIN"
+style="width:260px;padding:8px;">
+
+<br><br>
 
 <button onclick="loginPIN()">Masuk</button>
 
 <div id="loginStatus"></div>
+
 </div>
   
 <div class="section">
@@ -148,11 +162,6 @@ height="250"></canvas>
 <input type="file" id="pdfUpload" accept="application/pdf">
 
 <br><br>
-
-<button onclick="enablePasteMode()"
-style="background:#1976d2;color:white;font-weight:bold;">
-📌 Tempel TTD
-</button>
 
 <button onclick="undoStamp()">Undo Tempel</button>
 
@@ -231,8 +240,7 @@ overflow:auto;
 <li>Buat tanda tangan pada Area Tanda Tangan.</li>
 <li>Klik Buat PNG TTD.</li>
 <li>Upload file PDF.</li>
-<li>Double klik pada PDF untuk menempelkan tanda tangan atau;</li>
-<li>Klik "Tempel TTD" untuk menempelkan tanda tangan.</li>
+<li>Double klik pada PDF untuk menempelkan tanda tangan.</li>
 <li>Geser atau ubah ukuran tanda tangan sesuai kebutuhan.</li>
 <li>Klik Simpan PDF.</li>
 </ol>
@@ -291,7 +299,6 @@ let activePointers = new Map();
 let originalFileName = "";
 let signerUserID = "";
 let selectedInkColor = "#0E0E6B";
-let pasteMode = false;
 
 
 // RESET APLIKASI
@@ -687,12 +694,29 @@ renderPage(1);
 
 async function loginPIN(){
 
+const email =
+document.getElementById("emailInput")
+.value.trim();
+
 const pin =
-document.getElementById("pinInput").value;
+document.getElementById("pinInput")
+.value.trim();
+
+if(email==="" || pin===""){
+    alert("Email dan PIN wajib diisi");
+    return;
+}
 
 const url =
-"https://script.google.com/macros/s/AKfycbxD0r0L32WFnbP8zTtJfGwj60h-PjRqSZeo281XDFkP5e4VumC2KmCK0a6NKZnoj-9l/exec?pin=" +
-encodeURIComponent(pin);
+"https://script.google.com/macros/s/AKfycbxD0r0L32WFnbP8zTtJfGwj60h-PjRqSZeo281XDFkP5e4VumC2KmCK0a6NKZnoj-9l/exec" +
+"?email=" + encodeURIComponent(email) +
+"&pin=" + encodeURIComponent(pin);
+
+
+
+//const url =
+// "https://script.google.com/macros/s/AKfycbxD0r0L32WFnbP8zTtJfGwj60h-PjRqSZeo281XDFkP5e4VumC2KmCK0a6NKZnoj-9l/exec?pin=" +
+//encodeURIComponent(pin);
 
 try{
 
@@ -807,80 +831,39 @@ signatures[currentPage]=[];
 
 }
 
-function enablePasteMode(){
-
-if(!signaturePNG){
-
-alert("Silakan klik Buat PNG TTD terlebih dahulu");
-return;
-
-}
-
-pasteMode = true;
-
-alert(
-"Mode Tempel Aktif.\n\n" +
-"Silakan sentuh lokasi pada PDF untuk menempelkan tanda tangan."
-);
-
-}	
-
-
-function addStamp(pos){
-
-ensurePage();
-
-const w = 140;
-const h = w / stampRatio;
-
-const newStamp = {
-
-x: pos.x - (w/2),
-y: pos.y - (h/2),
-
-width: w,
-height: h
-
-};
-
-signatures[currentPage].push(newStamp);
-
-selectedIndex =
-signatures[currentPage].length - 1;
-
-drawStamps();
-
-}
-
-
 overlayCanvas.addEventListener(
 "dblclick",
 e=>{
 
 if(!signaturePNG) return;
 
-addStamp(
-getOverlayPos(e)
-);
+ensurePage();
+
+const pos =
+getOverlayPos(e);
+
+const w = 140;
+const h = w / stampRatio;
+
+const newStamp = {
+
+x:pos.x-(w/2),
+y:pos.y-(h/2),
+
+width:w,
+height:h
+
+};
+
+signatures[currentPage].push(newStamp);
+
+// otomatis pilih tempelan terbaru
+selectedIndex =
+signatures[currentPage].length - 1;
+
+drawStamps();
 
 });
-
-overlayCanvas.addEventListener(
-"click",
-e=>{
-
-if(!pasteMode) return;
-
-if(!signaturePNG) return;
-
-addStamp(
-getOverlayPos(e)
-);
-
-pasteMode = false;
-
-});
-
 
 function drawStamps(){
 
@@ -1390,7 +1373,7 @@ originalFileName
 );
 
 pdfToSave.setProducer(
-"TTD PDF V3.32"
+"TTD PDF V3.33"
 );
 
 pdfToSave.setCreator(
