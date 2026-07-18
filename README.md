@@ -31,7 +31,7 @@ Aplikasi berbasis HTML untuk menambahkan tanda tangan digital ke dokumen PDF sec
 
 ### 1. Login
 
-Masukkan PIN yang telah terdaftar.
+Masukkan PIN dan Email yang telah terdaftar.
 
 Setelah login berhasil, identitas penandatangan akan otomatis dimuat dari database Google Sheet.
 
