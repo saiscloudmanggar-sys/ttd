@@ -6,8 +6,13 @@
 
 <title>TTD PDF V3.33</title>
 
+<!--
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+-->
+
+<script src="libs/pdf.min.js"></script>
+<script src="libs/pdf-lib.min.js"></script>
 
 <style>
 
@@ -263,8 +268,9 @@ overflow:auto;
 
 <script>
 
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+//pdfjsLib.GlobalWorkerOptions.workerSrc ='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc ='libs/pdf.worker.min.js';
 
 let pdfBytes;
 let pdfDoc;
